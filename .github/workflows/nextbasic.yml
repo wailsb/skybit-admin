@@ -1,0 +1,12 @@
+name: CI Gatekeeper
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  run-quality-checks:
+    # Syntax: skybit-agency/{repo}/.github/workflows/{file}@{branch}
+    uses: skybit-agency/shared-devops/.github/workflows/nextjs-ci.yml@main
+    with:
+      node-version: '24' # Optional: Defaults to 20 if omitted
