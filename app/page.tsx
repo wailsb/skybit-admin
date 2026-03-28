@@ -7,7 +7,7 @@ export default function Home() {
         testing ci/cd configuration
         final test after adding PR
         blocked admin bypass
-        in>
+        </main>
     </div>
   );
 }
