@@ -1,0 +1,72 @@
+[
+{
+    "id":"1",
+    "title":"Marketing digital",
+    "description":"Ajudamos a sua empresa a alcançar o público certo, no momento certo, com estratégias de marketing digital personalizadas.",
+    "ImageUrl":"/marketing.jpg",
+    "linkto":"/marketing"
+},
+{
+    "id":"2",
+    "title":"Desenvolvimento de software",
+    "description":"Criamos soluções de software personalizadas para atender às necessidades específicas da sua empresa, desde aplicativos móveis até sistemas de gestão empresarial.",
+    "ImageUrl":"/software.jpg",
+    "linkto":"/software"
+},
+{
+    "id":"3",
+    "title":"Consultoria em TI",
+    "description":"Oferecemos consultoria especializada em tecnologia da informação para ajudar a sua empresa a otimizar processos, melhorar a segurança e adotar as melhores práticas do setor.",
+    "ImageUrl":"/consultoria.jpg",
+    "linkto":"/consultoria"
+},
+{
+    "id":"4",
+    "title":"Design gráfico",
+    "description":"Criamos designs gráficos impactantes e criativos para ajudar a sua empresa a se destacar no mercado, desde logotipos até materiais de marketing.",
+    "ImageUrl":"/design.jpg",
+    "linkto":"/design"
+},
+{
+    "id":"5",
+    "title":"Suporte técnico",
+    "description":"Oferecemos suporte técnico confiável e eficiente para garantir que os sistemas e equipamentos da sua empresa estejam sempre funcionando sem problemas.",
+    "ImageUrl":"/suporte.jpg",
+    "linkto":"/suporte"
+},
+{
+    "id":"6",
+    "title":"Treinamento em tecnologia",
+    "description":"Oferecemos treinamentos personalizados em tecnologia para capacitar a sua equipe e garantir que eles estejam atualizados com as últimas tendências e ferramentas do setor.",
+    "ImageUrl":"/treinamento.jpg",
+    "linkto":"/treinamento"
+},
+{
+    "id":"7",
+    "title":"Análise de dados",
+    "description":"Ajudamos a sua empresa a transformar dados em insights valiosos para tomar decisões informadas e impulsionar o crescimento do negócio.",
+    "ImageUrl":"/analise.jpg",
+    "linkto":"/analise"
+},
+{
+    "id":"8",
+    "title":"Segurança cibernética",
+    "description":"Oferecemos soluções de segurança cibernética para proteger a sua empresa contra ameaças online, desde firewalls até monitoramento de rede.",
+    "ImageUrl":"/seguranca.jpg",
+    "linkto":"/seguranca"
+},
+{
+    "id":"9",
+    "title":"Cloud computing",
+    "description":"Ajudamos a sua empresa a migrar para a nuvem e aproveitar os benefícios da computação em nuvem, desde armazenamento até serviços de hospedagem.",
+    "ImageUrl":"/cloud.jpg",
+    "linkto":"/cloud"
+},
+{
+    "id":"10",
+    "title":"Automação de processos",
+    "description":"Oferecemos soluções de automação de processos para ajudar a sua empresa a economizar tempo e recursos, desde automação de marketing até automação de processos empresariais.",
+    "ImageUrl":"/automacao.jpg",
+    "linkto":"/automacao"
+}
+]
