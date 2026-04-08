@@ -8,7 +8,7 @@ const publicRoutes = ['/login'];
 // Define routes that indicate the user is already authenticated but shouldn't be here
 const authRoutes = ['/login', '/'];
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Get refresh token from cookie
