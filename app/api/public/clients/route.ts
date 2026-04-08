@@ -18,7 +18,7 @@ export async function GET() {
       company: c.company,
       email: c.email,
       phone: c.phone,
-      imageUrl: c.imageUrl || c.ImageUrl || "",
+      imageUrl: c.imageUrl || "",
       projectCount: c.projectCount || 0
     }));
 

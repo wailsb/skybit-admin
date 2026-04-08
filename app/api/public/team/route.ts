@@ -19,8 +19,7 @@ export async function GET() {
       email: m.email,
       phone: m.phone,
       bio: m.bio,
-      imageUrl: m.imageUrl || m.ImageUrl || "",
-      socials: m.socials || {}
+      imageUrl: m.imageUrl || ""
     }));
 
     return NextResponse.json({

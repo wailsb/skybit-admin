@@ -16,7 +16,7 @@ export async function GET() {
       id: s._id.toString(),
       title: s.title,
       description: s.description,
-      imageUrl: s.imageUrl || s.ImageUrl || ""
+      imageUrl: s.ImageUrl || ""
     }));
 
     return NextResponse.json({
