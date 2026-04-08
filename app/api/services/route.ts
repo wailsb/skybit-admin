@@ -8,7 +8,8 @@ export async function GET() {
     await db.connect();
     const collection = db.db('skybit').collection('services');
     
-    const services = await collection.find({}).toArray() as (ServiceDB & { _id: { toString(): string } })[];
+    // Explicitly cast to unknown first to safely convert from MongoDB's generic document array
+    const services = (await collection.find({}).toArray()) as unknown as (ServiceDB & { _id: { toString(): string } })[];
     
     // Convert _id to string for the client
     const formattedServices = services.map((s) => ({

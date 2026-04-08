@@ -31,7 +31,7 @@ export function FormSubmissionsTable({
   return (
     <div className="space-y-3">
       {initialData.map((sub) => {
-        const idToUse = sub._id?.toString() || sub.id;
+        const idToUse = sub.id;
         return (
           <Card key={idToUse}>
             <CardHeader className="flex flex-row items-start justify-between gap-4">

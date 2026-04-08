@@ -1,6 +1,10 @@
-require('dotenv').config({ path: '.env' });
-const { MongoClient } = require('mongodb');
-const bcrypt = require('bcryptjs');
+import { config } from 'dotenv';
+import { MongoClient } from 'mongodb';
+import bcrypt from 'bcrypt';
+config({ path: '.env' });
+
+const { MongoClient } = MongoClient;
+
 
 // Fallback to local if env isn't loaded (though it should be)
 const hosts = [

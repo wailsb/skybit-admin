@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { verifyRefreshToken } from "./jwt";
 import { Database } from "@/config/db";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 
 export async function getSessionUser() {
   try {
@@ -17,10 +17,12 @@ export async function getSessionUser() {
     await db.connect();
     const collection = db.db('skybit').collection('users');
     
-    // Check if the userId is a 24-char hex string to cleanly cast to ObjectId
-    const query = typeof payload.userId === 'string' && payload.userId.length === 24 
-      ? { _id: new ObjectId(payload.userId) } 
-      : { _id: payload.userId };
+    // Using a record to satisfy MongoDB's Filter without using 'any' or shadowing the global 'Document' interface
+    const query = {
+      _id: typeof payload.userId === 'string' && payload.userId.length === 24 
+        ? new ObjectId(payload.userId) 
+        : payload.userId 
+    } as unknown as Filter<Record<string, unknown>>;
 
     const user = await collection.findOne(query);
 
@@ -33,6 +35,9 @@ export async function getSessionUser() {
       role: user.role,
     };
   } catch (err) {
+    if (err instanceof Error && (err as { digest?: string }).digest === 'DYNAMIC_SERVER_USAGE') {
+      throw err;
+    }
     console.error("Session fetch error:", err);
     return null;
   }

@@ -10,7 +10,8 @@ export async function GET() {
     await db.connect();
     const collection = db.db('skybit').collection('forms');
     
-    const forms = await collection.find({}).sort({ submittedAt: -1 }).toArray() as (ContactSubmissionDB & { _id: { toString(): string } })[];
+    // Explicitly cast to unknown first to safely convert from MongoDB's generic document array
+    const forms = (await collection.find({}).sort({ submittedAt: -1 }).toArray()) as unknown as (ContactSubmissionDB & { _id: { toString(): string } })[];
     
     const formatted = forms.map((f) => ({
       ...f,

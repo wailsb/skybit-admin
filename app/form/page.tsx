@@ -4,13 +4,20 @@ import { SiteHeader } from "@/components/site-header";
 import { FormSubmissionsTable } from "@/components/form-submissions-table";
 import { Database } from "@/config/db";
 import { getSessionUser } from "@/lib/session";
+import { ContactSubmission } from "../Types";
 
 export default async function FormPage() {
   const user = await getSessionUser();
   const db = Database.getInstance().getClient();
   await db.connect();
   const collection = db.db('skybit').collection('forms');
-  const forms = await collection.find({}).sort({ date: -1 }).toArray();
+  const formsRaw = await collection.find({}).sort({ submittedAt: -1 }).toArray();
+  
+  const forms = formsRaw.map(f => ({
+    ...f,
+    id: f._id.toString(),
+  })) as unknown as ContactSubmission[];
+
   return (
     <SidebarProvider
       style={

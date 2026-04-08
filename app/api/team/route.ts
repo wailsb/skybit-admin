@@ -8,7 +8,8 @@ export async function GET() {
     await db.connect();
     const collection = db.db('skybit').collection('team');
     
-    const team = await collection.find({}).toArray() as (TeamMemberDB & { _id: { toString(): string } })[];
+    // Explicitly cast to unknown first to safely convert from MongoDB's generic document array
+    const team = (await collection.find({}).toArray()) as unknown as (TeamMemberDB & { _id: { toString(): string } })[];
     
     const formatted = team.map((member) => ({
       ...member,

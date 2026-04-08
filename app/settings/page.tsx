@@ -4,14 +4,26 @@ import { SiteHeader } from "@/components/site-header";
 import { SettingsForm } from "@/components/settings-form";
 import { Database } from "@/config/db";
 import { getSessionUser } from "@/lib/session";
-import { SettingsUpdateDTO } from "../Types";
 
 export default async function SettingsPage() {
   const user = await getSessionUser();
   const db = Database.getInstance().getClient();
   await db.connect();
   const collection = db.db('skybit').collection('settings');
-  const settingsData = await collection.findOne({}) || {
+  const settingsRaw = await collection.findOne({});
+  
+  const settingsData = settingsRaw ? {
+    socialLinks: settingsRaw.socialLinks || [],
+    metadata: settingsRaw.metadata || {
+      receivingEmail: "",
+      logoUrl: "",
+      section3dTitle: "",
+      section3dDescription: "",
+      section3dSubtext: "",
+      scene3dFiles: [],
+      missionText: ""
+    }
+  } : {
     socialLinks: [],
     metadata: {
       receivingEmail: "",
@@ -45,7 +57,7 @@ export default async function SettingsPage() {
                 Manage social media links and website metadata.
               </p>
             </div>
-            <SettingsForm initialData={settingsData as SettingsUpdateDTO} />
+            <SettingsForm initialData={settingsData} />
           </div>
         </div>
       </SidebarInset>

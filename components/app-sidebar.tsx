@@ -95,13 +95,13 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton
               className="data-[slot=sidebar-menu-button]:p-1.5!"
-              asChild
-            >
-              <Link href="/">
-                <HugeiconsIcon icon={CommandIcon} strokeWidth={2} className="size-5!" />
-                <span className="text-base font-semibold">SkyBit Agency.</span>
-              </Link>
-            </SidebarMenuButton>
+              render={
+                <Link href="/">
+                  <HugeiconsIcon icon={CommandIcon} strokeWidth={2} className="size-5!" />
+                  <span className="text-base font-semibold">SkyBit Agency.</span>
+                </Link>
+              }
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
