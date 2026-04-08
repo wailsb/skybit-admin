@@ -2,10 +2,40 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SettingsForm } from "@/components/settings-form";
+import { Database } from "@/config/db";
+import { getSessionUser } from "@/lib/session";
 
-import data from "./data.json";
+export default async function SettingsPage() {
+  const user = await getSessionUser();
+  const db = Database.getInstance().getClient();
+  await db.connect();
+  const collection = db.db('skybit').collection('settings');
+  const settingsRaw = await collection.findOne({});
+  
+  const settingsData = settingsRaw ? {
+    socialLinks: settingsRaw.socialLinks || [],
+    metadata: settingsRaw.metadata || {
+      receivingEmail: "",
+      logoUrl: "",
+      section3dTitle: "",
+      section3dDescription: "",
+      section3dSubtext: "",
+      scene3dFiles: [],
+      missionText: ""
+    }
+  } : {
+    socialLinks: [],
+    metadata: {
+      receivingEmail: "",
+      logoUrl: "",
+      section3dTitle: "",
+      section3dDescription: "",
+      section3dSubtext: "",
+      scene3dFiles: [],
+      missionText: ""
+    }
+  };
 
-export default function SettingsPage() {
   return (
     <SidebarProvider
       style={
@@ -15,7 +45,7 @@ export default function SettingsPage() {
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar variant="inset" user={user} />
 
       <SidebarInset>
         <SiteHeader />
@@ -27,7 +57,7 @@ export default function SettingsPage() {
                 Manage social media links and website metadata.
               </p>
             </div>
-            <SettingsForm initialData={data} />
+            <SettingsForm initialData={settingsData} />
           </div>
         </div>
       </SidebarInset>

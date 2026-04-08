@@ -16,7 +16,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     if (!client) return NextResponse.json({ message: 'Not found' }, { status: 404 });
 
     return NextResponse.json({ ...client, _id: client._id.toString(), id: client._id.toString() }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: 'Failed to fetch client' }, { status: 500 });
   }
 }
@@ -46,7 +46,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (!result) return NextResponse.json({ message: 'Not found' }, { status: 404 });
 
     return NextResponse.json({ message: 'Client updated', client: result }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: 'Failed to update client' }, { status: 500 });
   }
 }
@@ -64,7 +64,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     if (result.deletedCount === 0) return NextResponse.json({ message: 'Not found' }, { status: 404 });
 
     return NextResponse.json({ message: 'Client deleted' }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: 'Failed to delete client' }, { status: 500 });
   }
 }

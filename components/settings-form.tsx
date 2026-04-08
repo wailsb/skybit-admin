@@ -18,6 +18,7 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import type { SocialLink, WebsiteMetadata } from "@/app/Types";
 
 interface SettingsData {
@@ -27,14 +28,19 @@ interface SettingsData {
 
 export function SettingsForm({ initialData }: { initialData: SettingsData }) {
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>(
-    initialData.socialLinks
+    initialData.socialLinks || []
   );
   const [metadata, setMetadata] = useState<WebsiteMetadata>(
-    initialData.metadata
+    initialData.metadata || {} as WebsiteMetadata
   );
   const [isSaving, setIsSaving] = useState(false);
-  const [logoPreview, setLogoPreview] = useState(initialData.metadata.logoUrl);
+  const [logoPreview, setLogoPreview] = useState(initialData.metadata?.logoUrl || "");
   const [logoFileName, setLogoFileName] = useState("");
+  
+  // Track actual files for upload
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [sceneFiles, setSceneFiles] = useState<File[]>([]);
+  
   const logoFileRef = useRef<HTMLInputElement>(null);
   const sceneFileRef = useRef<HTMLInputElement>(null);
 
@@ -68,27 +74,86 @@ export function SettingsForm({ initialData }: { initialData: SettingsData }) {
   function handleLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
+      setLogoFile(file);
       setLogoFileName(file.name);
       const url = URL.createObjectURL(file);
       setLogoPreview(url);
-      setMetadata((prev) => ({ ...prev, logoUrl: url }));
     }
   }
 
   function handleSceneFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (files) {
-      const names = Array.from(files).map((f) => f.name);
-      setMetadata((prev) => ({ ...prev, scene3dFiles: names }));
+      const fileArray = Array.from(files);
+      setSceneFiles(fileArray);
+      const names = fileArray.map((f) => f.name);
+      setMetadata((prev) => ({ ...prev, scene3dFiles: names })); // Temporary local display names
     }
   }
 
-  function handleSave() {
+  async function handleSave() {
     setIsSaving(true);
-    setTimeout(() => {
-      alert("Settings saved successfully!");
+    const updatedMetadata = { ...metadata };
+
+    try {
+      // 1. Upload Logo if changed
+      if (logoFile) {
+        toast.info("Uploading new logo...");
+        const formData = new FormData();
+        formData.append("file", logoFile);
+        
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        if (!res.ok) throw new Error("Failed to upload logo");
+        
+        const data = await res.json();
+        updatedMetadata.logoUrl = data.secure_url;
+      }
+
+      // 2. Upload 3D Scene Files if changed (concurrently)
+      if (sceneFiles.length > 0) {
+        toast.info(`Uploading ${sceneFiles.length} 3D scene files...`);
+        const uploadPromises = sceneFiles.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          const res = await fetch("/api/upload", { method: "POST", body: formData });
+          if (!res.ok) throw new Error(`Failed to upload ${file.name}`);
+          const data = await res.json();
+          // We could return an object Mapping names to URLs, but for now we store the secure URLs
+          return data.secure_url;
+        });
+
+        const sceneUrls = await Promise.all(uploadPromises);
+        updatedMetadata.scene3dFiles = sceneUrls;
+      }
+
+      // 3. Save to Global Settings API
+      toast.info("Saving settings updates...");
+      const finalPayload = {
+        socialLinks,
+        metadata: updatedMetadata,
+      };
+
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(finalPayload),
+      });
+
+      if (!res.ok) throw new Error("Failed to save settings to database");
+
+      toast.success("Settings saved successfully!");
+      
+      // Clear pending file states so we dont re-upload on next save
+      setLogoFile(null);
+      setSceneFiles([]);
+      
+    } catch (error) {
+      const err = error as Error;
+      console.error(err);
+      toast.error(err.message || "An error occurred while saving.");
+    } finally {
       setIsSaving(false);
-    }, 600);
+    }
   }
 
   return (
@@ -103,7 +168,7 @@ export function SettingsForm({ initialData }: { initialData: SettingsData }) {
                 Manage social media profiles displayed on the website.
               </CardDescription>
             </div>
-            <Button size="sm" onClick={addSocialLink}>
+            <Button size="sm" onClick={addSocialLink} disabled={isSaving}>
               Add Link
             </Button>
           </div>

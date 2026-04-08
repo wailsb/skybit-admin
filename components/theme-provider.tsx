@@ -31,22 +31,31 @@ function getSystemTheme(): "light" | "dark" {
 
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+  // Use a lazy initializer for state to avoid calling setState in useEffect
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "system";
+    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
+    return stored || "system";
+  });
 
-  // Read stored theme on mount
-  useEffect(() => {
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "light";
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
     const t = stored || "system";
-    setThemeState(t);
-    const resolved = t === "system" ? getSystemTheme() : t;
-    setResolvedTheme(resolved);
-  }, []);
+    return t === "system" ? getSystemTheme() : (t === "dark" ? "dark" : "light");
+  });
 
-  // Listen for system theme changes
+  // Apply theme on mount
+  useEffect(() => {
+    const root = document.documentElement;
+    const isDark = resolvedTheme === "dark";
+    root.classList.toggle("dark", isDark);
+  }, [resolvedTheme]);
+
+  // Effect is now only for external synchronization and event listeners
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    function handler() {
+    const handler = () => {
       if (theme === "system") {
         const resolved = getSystemTheme();
         setResolvedTheme(resolved);

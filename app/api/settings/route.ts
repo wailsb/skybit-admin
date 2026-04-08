@@ -9,7 +9,7 @@ export async function GET() {
     const collection = db.db('skybit').collection('settings');
     
     // Fetch the single settings document (or default if none exists)
-    let settings = await collection.findOne({});
+    const settings = await collection.findOne({});
     
     if (!settings) {
       // Return a default structure if none exists in DB
@@ -28,7 +28,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ ...settings, _id: settings._id.toString() }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: 'Failed to fetch settings' }, { status: 500 });
   }
 }
@@ -58,7 +58,7 @@ export async function PUT(request: Request) {
     );
 
     return NextResponse.json({ message: 'Settings updated', settings: result }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: 'Failed to update settings' }, { status: 500 });
   }
 }

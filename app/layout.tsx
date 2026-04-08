@@ -38,9 +38,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         robotoHeading.variable
       )}
     >
-      <head>
-        <script src="/theme-init.js" />
-      </head>
       <body className="min-h-full flex flex-col">
           <Providers>
             {children}

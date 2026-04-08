@@ -12,11 +12,18 @@ import {
   FieldDescription as FieldDesc,
 } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import type { Client } from "@/app/Types";
 
 type ImageMode = "url" | "upload";
 
-export function ClientEditForm({ client }: { client: Client }) {
+export function ClientEditForm({ 
+  client, 
+  isNew = false 
+}: { 
+  client: Client; 
+  isNew?: boolean;
+}) {
   const router = useRouter();
   const [formData, setFormData] = useState<Client>({ ...client });
   const [isSaving, setIsSaving] = useState(false);
@@ -24,6 +31,8 @@ export function ClientEditForm({ client }: { client: Client }) {
   const [previewUrl, setPreviewUrl] = useState(client.imageUrl);
   const [fileName, setFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [file, setFile] = useState<File | null>(null);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value, type } = e.target;
@@ -35,10 +44,11 @@ export function ClientEditForm({ client }: { client: Client }) {
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
-      const objectUrl = URL.createObjectURL(file);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setFileName(selectedFile.name);
+      const objectUrl = URL.createObjectURL(selectedFile);
       setPreviewUrl(objectUrl);
       setFormData((prev) => ({ ...prev, imageUrl: objectUrl }));
     }
@@ -53,15 +63,47 @@ export function ClientEditForm({ client }: { client: Client }) {
         imageUrl: prev.imageUrl.startsWith("blob:") ? client.imageUrl : prev.imageUrl,
       }));
       setFileName("");
+      setFile(null);
     }
   }
 
-  function handleSave() {
+  async function handleSave() {
     setIsSaving(true);
-    setTimeout(() => {
-      alert(`Client "${formData.name}" saved successfully!`);
+    const finalData = { ...formData };
+
+    try {
+      if (imageMode === "upload" && file) {
+        toast.info("Uploading client logo to Cloudinary...");
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+
+        const res = await fetch("/api/upload", { method: "POST", body: uploadData });
+        if (!res.ok) throw new Error("Failed to upload image");
+
+        const data = await res.json();
+        finalData.imageUrl = data.secure_url;
+      }
+
+      toast.info(isNew ? "Creating client..." : "Saving client details...");
+      const res = await fetch("/api/clients", {
+        method: isNew ? "POST" : "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(finalData),
+      });
+
+      if (!res.ok) throw new Error("Failed to save client");
+
+      toast.success(isNew ? "Client created successfully!" : "Client saved successfully!");
+      router.push("/clients");
+      router.refresh();
+
+    } catch (error) {
+      const err = error as Error;
+      console.error(err);
+      toast.error(err.message || "An error occurred while saving.");
+    } finally {
       setIsSaving(false);
-    }, 600);
+    }
   }
 
   return (
@@ -79,7 +121,7 @@ export function ClientEditForm({ client }: { client: Client }) {
               {formData.projectCount} project{formData.projectCount !== 1 ? "s" : ""}
             </Badge>
             <h2 className="text-xl font-bold text-white drop-shadow-md">
-              {formData.name}
+              {formData.name || (isNew ? "New Client" : "")}
             </h2>
           </div>
         </div>
@@ -87,9 +129,9 @@ export function ClientEditForm({ client }: { client: Client }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Edit Client</CardTitle>
+          <CardTitle>{isNew ? "Add New Client" : "Edit Client"}</CardTitle>
           <CardDescription>
-            Modify client details below.
+            {isNew ? "Create a new client profile." : "Modify client details below."}
           </CardDescription>
         </CardHeader>
         <div className="px-6 pb-6">
@@ -97,26 +139,26 @@ export function ClientEditForm({ client }: { client: Client }) {
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="name">Client Name</FieldLabel>
-                <Input id="name" name="name" value={formData.name} onChange={handleChange} />
+                <Input id="name" name="name" value={formData.name ?? ""} onChange={handleChange} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="company">Company</FieldLabel>
-                <Input id="company" name="company" value={formData.company} onChange={handleChange} />
+                <Input id="company" name="company" value={formData.company ?? ""} onChange={handleChange} />
               </Field>
             </div>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} />
+                <Input id="email" name="email" type="email" value={formData.email ?? ""} onChange={handleChange} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="phone">Phone</FieldLabel>
-                <Input id="phone" name="phone" value={formData.phone} onChange={handleChange} />
+                <Input id="phone" name="phone" value={formData.phone ?? ""} onChange={handleChange} />
               </Field>
             </div>
             <Field>
               <FieldLabel htmlFor="projectCount">Project Count</FieldLabel>
-              <Input id="projectCount" name="projectCount" type="number" min={0} value={formData.projectCount} onChange={handleChange} />
+              <Input id="projectCount" name="projectCount" type="number" min={0} value={formData.projectCount ?? 0} onChange={handleChange} />
             </Field>
 
             <Field>
@@ -131,7 +173,7 @@ export function ClientEditForm({ client }: { client: Client }) {
               </div>
               {imageMode === "url" ? (
                 <div className="mt-2">
-                  <Input id="imageUrl" name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="/clients/logo.jpg" />
+                  <Input id="imageUrl" name="imageUrl" value={formData.imageUrl ?? ""} onChange={handleChange} placeholder="/clients/logo.jpg" />
                   <FieldDesc>Enter a URL or path to the client image.</FieldDesc>
                 </div>
               ) : (

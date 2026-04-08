@@ -15,7 +15,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     if (result.deletedCount === 0) return NextResponse.json({ message: 'Not found' }, { status: 404 });
 
     return NextResponse.json({ message: 'Submission deleted' }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: 'Failed to delete submission' }, { status: 500 });
   }
 }

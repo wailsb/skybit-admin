@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { DeleteButton } from "@/components/ui/delete-button"
 import Link from "next/link"
 
 interface CardServiceProps {
@@ -20,7 +21,7 @@ interface CardServiceProps {
 }
 export function CardImage({ id, title, description, imageUrl, linkTo, badgeText }: CardServiceProps) {
   return (
-    <Card className="relative mx-auto w-full max-w-sm pt-0">
+    <Card className="relative mx-auto w-full max-w-sm pt-0 flex flex-col">
       <div className="absolute inset-0 z-30 aspect-video bg-black/35" />
       <img
         src={imageUrl}
@@ -37,14 +38,14 @@ export function CardImage({ id, title, description, imageUrl, linkTo, badgeText 
         </CardDescription>
       </CardHeader>
       <div className="flex-1" />
-      <CardFooter className="flex flex-col gap-2">
+      <CardFooter className="flex flex-col gap-2 mt-auto">
         <Link
           href={`/services/${id}`}
           className="inline-flex w-full shrink-0 items-center justify-center rounded-lg bg-primary px-2.5 text-sm font-medium text-primary-foreground transition-all h-8 gap-1.5 hover:bg-primary/80"
         >
           Modify
         </Link>
-        <Button className="w-full">Delete</Button>
+        <DeleteButton id={id} endpoint="/api/services" itemName="service" />
       </CardFooter>
     </Card>
   )

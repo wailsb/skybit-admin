@@ -13,11 +13,18 @@ import {
   FieldDescription as FieldDesc,
 } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import type { TeamMember } from "@/app/Types";
 
 type ImageMode = "url" | "upload";
 
-export function TeamEditForm({ member }: { member: TeamMember }) {
+export function TeamEditForm({ 
+  member, 
+  isNew = false 
+}: { 
+  member: TeamMember; 
+  isNew?: boolean;
+}) {
   const router = useRouter();
   const [formData, setFormData] = useState<TeamMember>({ ...member });
   const [isSaving, setIsSaving] = useState(false);
@@ -25,6 +32,8 @@ export function TeamEditForm({ member }: { member: TeamMember }) {
   const [previewUrl, setPreviewUrl] = useState(member.imageUrl);
   const [fileName, setFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [file, setFile] = useState<File | null>(null);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -35,10 +44,11 @@ export function TeamEditForm({ member }: { member: TeamMember }) {
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
-      const objectUrl = URL.createObjectURL(file);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setFileName(selectedFile.name);
+      const objectUrl = URL.createObjectURL(selectedFile);
       setPreviewUrl(objectUrl);
       setFormData((prev) => ({ ...prev, imageUrl: objectUrl }));
     }
@@ -55,15 +65,47 @@ export function TeamEditForm({ member }: { member: TeamMember }) {
         imageUrl: prev.imageUrl.startsWith("blob:") ? member.imageUrl : prev.imageUrl,
       }));
       setFileName("");
+      setFile(null);
     }
   }
 
-  function handleSave() {
+  async function handleSave() {
     setIsSaving(true);
-    setTimeout(() => {
-      alert(`Team member "${formData.name}" saved successfully!`);
+    const finalData = { ...formData };
+
+    try {
+      if (imageMode === "upload" && file) {
+        toast.info("Uploading profile image to Cloudinary...");
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+
+        const res = await fetch("/api/upload", { method: "POST", body: uploadData });
+        if (!res.ok) throw new Error("Failed to upload image");
+
+        const data = await res.json();
+        finalData.imageUrl = data.secure_url;
+      }
+
+      toast.info(isNew ? "Adding team member..." : "Saving team member details...");
+      const res = await fetch("/api/team", {
+        method: isNew ? "POST" : "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(finalData),
+      });
+
+      if (!res.ok) throw new Error("Failed to save team member");
+
+      toast.success(isNew ? "Team member added successfully!" : "Team member saved successfully!");
+      router.push("/team");
+      router.refresh();
+
+    } catch (error) {
+      const err = error as Error;
+      console.error(err);
+      toast.error(err.message || "An error occurred while saving.");
+    } finally {
       setIsSaving(false);
-    }, 600);
+    }
   }
 
   return (
@@ -78,10 +120,10 @@ export function TeamEditForm({ member }: { member: TeamMember }) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
             <Badge variant="secondary" className="mb-2">
-              {formData.role}
+              {formData.role || (isNew ? "New Role" : "")}
             </Badge>
             <h2 className="text-xl font-bold text-white drop-shadow-md">
-              {formData.name}
+              {formData.name || (isNew ? "New Member" : "")}
             </h2>
           </div>
         </div>
@@ -89,9 +131,9 @@ export function TeamEditForm({ member }: { member: TeamMember }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Edit Team Member</CardTitle>
+          <CardTitle>{isNew ? "Add Team Member" : "Edit Team Member"}</CardTitle>
           <CardDescription>
-            Modify the team member details below.
+            {isNew ? "Create a new team member profile." : "Modify the team member details below."}
           </CardDescription>
         </CardHeader>
         <div className="px-6 pb-6">
@@ -99,27 +141,27 @@ export function TeamEditForm({ member }: { member: TeamMember }) {
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="name">Full Name</FieldLabel>
-                <Input id="name" name="name" value={formData.name} onChange={handleChange} />
+                <Input id="name" name="name" value={formData.name ?? ""} onChange={handleChange} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="role">Role</FieldLabel>
-                <Input id="role" name="role" value={formData.role} onChange={handleChange} />
+                <Input id="role" name="role" value={formData.role ?? ""} onChange={handleChange} />
               </Field>
             </div>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} />
+                <Input id="email" name="email" type="email" value={formData.email ?? ""} onChange={handleChange} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="phone">Phone</FieldLabel>
-                <Input id="phone" name="phone" value={formData.phone} onChange={handleChange} />
+                <Input id="phone" name="phone" value={formData.phone ?? ""} onChange={handleChange} />
               </Field>
             </div>
 
             <Field>
               <FieldLabel htmlFor="bio">Bio</FieldLabel>
-              <Textarea id="bio" name="bio" value={formData.bio} onChange={handleChange} rows={3} />
+              <Textarea id="bio" name="bio" value={formData.bio ?? ""} onChange={handleChange} rows={3} />
             </Field>
 
             <Field>
@@ -134,7 +176,7 @@ export function TeamEditForm({ member }: { member: TeamMember }) {
               </div>
               {imageMode === "url" ? (
                 <div className="mt-2">
-                  <Input id="imageUrl" name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="/team/photo.jpg" />
+                  <Input id="imageUrl" name="imageUrl" value={formData.imageUrl ?? ""} onChange={handleChange} placeholder="/team/photo.jpg" />
                   <FieldDesc>Enter a URL or path to the profile image.</FieldDesc>
                 </div>
               ) : (
@@ -151,7 +193,7 @@ export function TeamEditForm({ member }: { member: TeamMember }) {
 
           <div className="mt-6 flex items-center gap-3">
             <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? "Saving…" : "Save Changes"}
+              {isSaving ? "Saving…" : (isNew ? "Create Member" : "Save Changes")}
             </Button>
             <Button variant="ghost" onClick={() => router.push("/team")}>
               Cancel

@@ -5,6 +5,7 @@ import { Database } from '@/config/db';
 import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from '@/lib/jwt';
 import { ObjectId } from 'mongodb';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(request: Request) {
   try {
     const cookieStore = await cookies();

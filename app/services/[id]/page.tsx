@@ -2,6 +2,9 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { ServiceEditForm } from "@/components/service-edit-form";
+import { Database } from "@/config/db";
+import { ObjectId } from "mongodb";
+import { getSessionUser } from "@/lib/session";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,15 +14,44 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-import data from "../data.json";
-
 export default async function ServiceEditPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const service = data.find((s) => s.id === id);
+  const user = await getSessionUser();
+  
+  let service = null;
+  const isNew = id === "new";
+
+  if (!isNew) {
+    try {
+      const db = Database.getInstance().getClient();
+      await db.connect();
+      const collection = db.db('skybit').collection('services');
+      service = await collection.findOne({ _id: new ObjectId(id) });
+      if (service) {
+        // Form expects 'id' string and specific properties
+        service = {
+          ...service,
+          id: service._id.toString(),
+          ImageUrl: service.ImageUrl || service.imageUrl || ""
+        };
+      }
+    } catch (e) {
+      console.error("Error fetching service:", e);
+    }
+  } else {
+    // Default data for new service
+    service = {
+      id: "new",
+      title: "",
+      description: "",
+      ImageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop",
+      linkto: ""
+    };
+  }
 
   return (
     <SidebarProvider
@@ -30,7 +62,7 @@ export default async function ServiceEditPage({
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar variant="inset" user={user} />
 
       <SidebarInset>
         <SiteHeader />
@@ -45,7 +77,7 @@ export default async function ServiceEditPage({
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   <BreadcrumbPage>
-                    {service ? service.title : "Not Found"}
+                    {isNew ? "New Service" : (service ? service.title : "Not Found")}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
@@ -53,7 +85,7 @@ export default async function ServiceEditPage({
 
             {/* Content */}
             {service ? (
-              <ServiceEditForm service={service} />
+              <ServiceEditForm service={service as any} isNew={isNew} />
             ) : (
               <div className="flex flex-1 items-center justify-center py-20">
                 <div className="text-center">

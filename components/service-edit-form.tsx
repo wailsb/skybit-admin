@@ -13,6 +13,7 @@ import {
   FieldDescription,
 } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface ServiceData {
   id: string;
@@ -24,7 +25,13 @@ interface ServiceData {
 
 type ImageMode = "url" | "upload";
 
-export function ServiceEditForm({ service }: { service: ServiceData }) {
+export function ServiceEditForm({ 
+  service, 
+  isNew = false 
+}: { 
+  service: ServiceData, 
+  isNew?: boolean 
+}) {
   const router = useRouter();
   const [formData, setFormData] = useState<ServiceData>({ ...service });
   const [isSaving, setIsSaving] = useState(false);
@@ -32,6 +39,8 @@ export function ServiceEditForm({ service }: { service: ServiceData }) {
   const [previewUrl, setPreviewUrl] = useState<string>(service.ImageUrl);
   const [fileName, setFileName] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [file, setFile] = useState<File | null>(null);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -44,10 +53,11 @@ export function ServiceEditForm({ service }: { service: ServiceData }) {
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
-      const objectUrl = URL.createObjectURL(file);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setFileName(selectedFile.name);
+      const objectUrl = URL.createObjectURL(selectedFile);
       setPreviewUrl(objectUrl);
       setFormData((prev) => ({ ...prev, ImageUrl: objectUrl }));
     }
@@ -62,17 +72,47 @@ export function ServiceEditForm({ service }: { service: ServiceData }) {
         ImageUrl: prev.ImageUrl.startsWith("blob:") ? service.ImageUrl : prev.ImageUrl,
       }));
       setFileName("");
+      setFile(null);
     }
   }
 
-  function handleSave() {
+  async function handleSave() {
     setIsSaving(true);
-    setTimeout(() => {
-      alert(
-        `Service "${formData.title}" saved successfully!\n\n${JSON.stringify(formData, null, 2)}`
-      );
+    const finalData = { ...formData };
+
+    try {
+      if (imageMode === "upload" && file) {
+        toast.info("Uploading image to Cloudinary...");
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+
+        const res = await fetch("/api/upload", { method: "POST", body: uploadData });
+        if (!res.ok) throw new Error("Failed to upload image");
+
+        const data = await res.json();
+        finalData.ImageUrl = data.secure_url;
+      }
+
+      toast.info(isNew ? "Creating service..." : "Saving service details...");
+      const res = await fetch("/api/services", {
+        method: isNew ? "POST" : "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(finalData),
+      });
+
+      if (!res.ok) throw new Error("Failed to save service");
+
+      toast.success(isNew ? "Service created successfully!" : "Service saved successfully!");
+      router.push("/services");
+      router.refresh();
+
+    } catch (error) {
+      const err = error as Error;
+      console.error(err);
+      toast.error(err.message || "An error occurred while saving.");
+    } finally {
       setIsSaving(false);
-    }, 600);
+    }
   }
 
   return (
@@ -87,11 +127,13 @@ export function ServiceEditForm({ service }: { service: ServiceData }) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
-            <Badge variant="secondary" className="mb-2">
-              ID: {formData.id}
-            </Badge>
+            {!isNew && (
+              <Badge variant="secondary" className="mb-2">
+                ID: {formData.id}
+              </Badge>
+            )}
             <h2 className="text-xl font-bold text-white drop-shadow-md">
-              {formData.title}
+              {formData.title || "New Service"}
             </h2>
           </div>
         </div>
@@ -100,9 +142,11 @@ export function ServiceEditForm({ service }: { service: ServiceData }) {
       {/* Edit Form */}
       <Card>
         <CardHeader>
-          <CardTitle>Edit Service</CardTitle>
+          <CardTitle>{isNew ? "Add New Service" : "Edit Service"}</CardTitle>
           <CardDescription>
-            Modify the service details below and save your changes.
+            {isNew 
+              ? "Fill in the details below to define a new service." 
+              : "Modify the service details below and save your changes."}
           </CardDescription>
         </CardHeader>
         <div className="px-6 pb-6">
@@ -229,7 +273,7 @@ export function ServiceEditForm({ service }: { service: ServiceData }) {
 
           <div className="mt-6 flex items-center gap-3">
             <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? "Saving…" : "Save Changes"}
+              {isSaving ? "Saving…" : (isNew ? "Create Service" : "Save Changes")}
             </Button>
             <Button
               variant="ghost"

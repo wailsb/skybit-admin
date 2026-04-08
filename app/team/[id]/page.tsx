@@ -2,6 +2,9 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { TeamEditForm } from "@/components/team-edit-form";
+import { Database } from "@/config/db";
+import { ObjectId } from "mongodb";
+import { getSessionUser } from "@/lib/session";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,15 +14,45 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-import data from "../data.json";
-
 export default async function TeamEditPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const member = data.find((m) => m.id === id);
+  const user = await getSessionUser();
+  
+  let member = null;
+  const isNew = id === "new";
+
+  if (!isNew) {
+    try {
+      const db = Database.getInstance().getClient();
+      await db.connect();
+      const collection = db.db('skybit').collection('team');
+      member = await collection.findOne({ _id: new ObjectId(id) });
+      if (member) {
+        member = {
+          ...member,
+          id: member._id.toString(),
+          imageUrl: member.imageUrl || member.ImageUrl || ""
+        };
+      }
+    } catch (e) {
+      console.error("Error fetching team member:", e);
+    }
+  } else {
+    // Default data for new team member
+    member = {
+      id: "new",
+      name: "",
+      email: "",
+      role: "",
+      bio: "",
+      imageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=2070&auto=format&fit=crop",
+      socials: { twitter: "", linkedin: "", github: "" }
+    };
+  }
 
   return (
     <SidebarProvider
@@ -30,7 +63,7 @@ export default async function TeamEditPage({
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar variant="inset" user={user} />
 
       <SidebarInset>
         <SiteHeader />
@@ -44,14 +77,14 @@ export default async function TeamEditPage({
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   <BreadcrumbPage>
-                    {member ? member.name : "Not Found"}
+                    {isNew ? "New Member" : (member ? member.name : "Not Found")}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
 
             {member ? (
-              <TeamEditForm member={member} />
+              <TeamEditForm member={member as any} isNew={isNew} />
             ) : (
               <div className="flex flex-1 items-center justify-center py-20">
                 <div className="text-center">
