@@ -9,7 +9,7 @@ const allowlist = (process.env.NEXT_PUBLIC_CORS_ALLOWLIST || "")
   .map((value) => value.trim())
   .filter(Boolean);
 
-function getCorsHeaders(origin: string | null) {
+function getCorsHeaders(origin: string | null): Record<string, string> | null {
   if (!origin) {
     return {
       'Access-Control-Allow-Origin': '*',
