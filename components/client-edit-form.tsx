@@ -86,7 +86,10 @@ export function ClientEditForm({
       }
 
       toast.info(isNew ? "Creating client..." : "Saving client details...");
-      const res = await fetch("/api/clients", {
+      const endpoint = isNew
+        ? "/api/clients"
+        : `/api/clients/${encodeURIComponent(formData.id)}`;
+      const res = await fetch(endpoint, {
         method: isNew ? "POST" : "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(finalData),

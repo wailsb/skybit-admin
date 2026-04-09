@@ -95,7 +95,10 @@ export function ServiceEditForm({
       }
 
       toast.info(isNew ? "Creating service..." : "Saving service details...");
-      const res = await fetch("/api/services", {
+      const endpoint = isNew
+        ? "/api/services"
+        : `/api/services/${encodeURIComponent(formData.id)}`;
+      const res = await fetch(endpoint, {
         method: isNew ? "POST" : "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(finalData),

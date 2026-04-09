@@ -88,7 +88,10 @@ export function TeamEditForm({
       }
 
       toast.info(isNew ? "Adding team member..." : "Saving team member details...");
-      const res = await fetch("/api/team", {
+      const endpoint = isNew
+        ? "/api/team"
+        : `/api/team/${encodeURIComponent(formData.id)}`;
+      const res = await fetch(endpoint, {
         method: isNew ? "POST" : "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(finalData),
