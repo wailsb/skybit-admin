@@ -21,7 +21,8 @@ export function DeleteButton({ id, endpoint, itemName = "item", className }: Del
 
     setIsDeleting(true);
     try {
-      const res = await fetch(`${endpoint}?id=${id}`, {
+      const safeEndpoint = endpoint.endsWith("/") ? endpoint.slice(0, -1) : endpoint;
+      const res = await fetch(`${safeEndpoint}/${encodeURIComponent(id)}`, {
         method: "DELETE",
       });
 
