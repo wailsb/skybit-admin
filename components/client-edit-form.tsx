@@ -89,10 +89,14 @@ export function ClientEditForm({
       const endpoint = isNew
         ? "/api/clients"
         : `/api/clients/${encodeURIComponent(formData.id)}`;
+      const { id, ...clientPayload } = finalData as Client & { _id?: string };
+      void id;
+      const { _id, ...safePayload } = clientPayload;
+      void _id;
       const res = await fetch(endpoint, {
         method: isNew ? "POST" : "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(finalData),
+        body: JSON.stringify(safePayload),
       });
 
       if (!res.ok) throw new Error("Failed to save client");
